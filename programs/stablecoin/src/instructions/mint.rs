@@ -28,26 +28,16 @@ pub struct MintStablecoin<'info> {
     pub to: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
-        seeds = [b"role", config.key().as_ref(), minter.key().as_ref()],
+        seeds = [b"role", role_types::MINTER.as_bytes(), minter.key().as_ref()],
         bump = role_account.bump
     )]
-    pub role_account: Option<Account<'info, RoleAccount>>,
+    pub role_account: Account<'info, RoleAccount>,
 
     pub token_program: Program<'info, Token2022>,
 }
 
 pub fn handler(ctx: Context<MintStablecoin>, amount: u64) -> Result<()> {
-    let config = &ctx.accounts.config;
-    let minter = ctx.accounts.minter.key();
-
-    // Access Control: Must be admin or have MINTER role
-    let has_role = if let Some(role_account) = &ctx.accounts.role_account {
-        (role_account.roles & roles::MINTER) != 0
-    } else {
-        false
-    };
-
-    if minter != config.admin && !has_role {
+    if ctx.accounts.role_account.role_type != role_types::MINTER {
         return err!(StablecoinError::Unauthorized);
     }
 

@@ -1,0 +1,32 @@
+[package]
+name = "stablecoin"
+version = "0.1.0"
+description = "Solana Stablecoin Standard Core Program"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "stablecoin"
+
+[dependencies]
+anchor-lang = { version = "0.32.1", features = ["init-if-needed"] }
+anchor-spl = { version = "0.32.1", features = ["token_2022", "metadata"] }
+spl-token-2022 = "6.0.0"
+spl-token-metadata-interface = "0.3.0"
+spl-transfer-hook-interface = "0.9.0"
+spl-tlv-account-resolution = "0.9.0"
+spl-type-length-value = "0.6.0"
+solana-program = "2.1"
+blake3 = "=1.6.1"
+base64ct = "=1.6.0"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build"]
+anchor-debug = []
+custom-heap = []
+custom-panic = []

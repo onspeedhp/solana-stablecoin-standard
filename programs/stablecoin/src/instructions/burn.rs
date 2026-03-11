@@ -28,26 +28,16 @@ pub struct BurnStablecoin<'info> {
     pub from: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
-        seeds = [b"role", config.key().as_ref(), burner.key().as_ref()],
+        seeds = [b"role", role_types::BURNER.as_bytes(), burner.key().as_ref()],
         bump = role_account.bump
     )]
-    pub role_account: Option<Account<'info, RoleAccount>>,
+    pub role_account: Account<'info, RoleAccount>,
 
     pub token_program: Program<'info, Token2022>,
 }
 
 pub fn handler(ctx: Context<BurnStablecoin>, amount: u64) -> Result<()> {
-    let config = &ctx.accounts.config;
-    let burner = ctx.accounts.burner.key();
-
-    // Access Control: Must be admin or have BURNER role
-    let has_role = if let Some(role_account) = &ctx.accounts.role_account {
-        (role_account.roles & roles::BURNER) != 0
-    } else {
-        false
-    };
-
-    if burner != config.admin && !has_role {
+    if ctx.accounts.role_account.role_type != role_types::BURNER {
         return err!(StablecoinError::Unauthorized);
     }
 

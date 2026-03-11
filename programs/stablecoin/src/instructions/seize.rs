@@ -34,15 +34,17 @@ pub struct SeizeStablecoin<'info> {
     )]
     pub destination: InterfaceAccount<'info, TokenAccount>,
 
+    #[account(
+        seeds = [b"role", role_types::SEIZER.as_bytes(), authority.key().as_ref()],
+        bump = role_account.bump
+    )]
+    pub role_account: Account<'info, RoleAccount>,
+
     pub token_program: Program<'info, Token2022>,
 }
 
 pub fn handler(ctx: Context<SeizeStablecoin>, amount: u64) -> Result<()> {
-    let config = &ctx.accounts.config;
-    let authority = ctx.accounts.authority.key();
-
-    // Only Admin or compliance-authorized role can seize
-    if authority != config.admin {
+    if ctx.accounts.role_account.role_type != role_types::SEIZER {
         return err!(StablecoinError::Unauthorized);
     }
 

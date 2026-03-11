@@ -1,22 +1,23 @@
-pub mod constants;
-pub mod error;
-pub mod instructions;
-pub mod state;
-
 use anchor_lang::prelude::*;
-
-pub use constants::*;
-pub use instructions::*;
-pub use state::*;
+use crate::state::*;
 
 declare_id!("8fsBJKMGbZbQUHAHLqzgY8vkAzmCHUYkwAEQ3AFNSqMR");
 
+pub const TRANSFER_HOOK_ID: Pubkey = pubkey!("sssHook111111111111111111111111111111111111");
+
 #[program]
-pub mod solana_stablecoin {
+pub mod stablecoin {
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>, preset: StablecoinPreset) -> Result<()> {
-        instructions::initialize::handler(ctx, preset)
+    pub fn initialize(
+        ctx: Context<Initialize>, 
+        preset: StablecoinPreset,
+        name: String,
+        symbol: String,
+        uri: String,
+        decimals: u8
+    ) -> Result<()> {
+        instructions::initialize::handler(ctx, preset, name, symbol, uri, decimals)
     }
 
     pub fn mint(ctx: Context<MintStablecoin>, amount: u64) -> Result<()> {
@@ -43,12 +44,16 @@ pub mod solana_stablecoin {
         instructions::freeze::thaw_handler(ctx)
     }
 
-    pub fn update_roles(ctx: Context<UpdateRoles>, user: Pubkey, roles: u16) -> Result<()> {
-        instructions::roles::handler(ctx, user, roles)
+    pub fn add_role(ctx: Context<AddRole>, role_type: String, wallet: Pubkey) -> Result<()> {
+        instructions::roles::add_handler(ctx, role_type, wallet)
     }
 
-    pub fn blacklist_add(ctx: Context<ManageBlacklist>, user: Pubkey) -> Result<()> {
-        instructions::blacklist::add_handler(ctx, user)
+    pub fn remove_role(ctx: Context<RemoveRole>, role_type: String, wallet: Pubkey) -> Result<()> {
+        instructions::roles::remove_handler(ctx, role_type, wallet)
+    }
+
+    pub fn blacklist_add(ctx: Context<ManageBlacklist>, user: Pubkey, reason: String) -> Result<()> {
+        instructions::blacklist::add_handler(ctx, user, reason)
     }
 
     pub fn blacklist_remove(ctx: Context<ManageBlacklist>, user: Pubkey) -> Result<()> {
@@ -58,8 +63,11 @@ pub mod solana_stablecoin {
     pub fn seize(ctx: Context<SeizeStablecoin>, amount: u64) -> Result<()> {
         instructions::seize::handler(ctx, amount)
     }
-
-    pub fn transfer_hook(ctx: Context<Execute>, amount: u64) -> Result<()> {
-        instructions::transfer_hook::handler(ctx, amount)
-    }
 }
+
+pub mod error;
+pub mod instructions;
+pub mod state;
+pub mod constants;
+
+pub use instructions::*;

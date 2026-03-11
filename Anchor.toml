@@ -6,7 +6,8 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-solana_stablecoin = "8fsBJKMGbZbQUHAHLqzgY8vkAzmCHUYkwAEQ3AFNSqMR"
+stablecoin = "8fsBJKMGbZbQUHAHLqzgY8vkAzmCHUYkwAEQ3AFNSqMR"
+transfer_hook = "sssHook111111111111111111111111111111111111"
 
 [registry]
 url = "https://api.apr.dev"

@@ -21,14 +21,17 @@ pub struct ManagePause<'info> {
     )]
     pub pause_state: Account<'info, PauseState>,
 
+    #[account(
+        seeds = [b"role", role_types::PAUSER.as_bytes(), authority.key().as_ref()],
+        bump = role_account.bump
+    )]
+    pub role_account: Account<'info, RoleAccount>,
+
     pub system_program: Program<'info, System>,
 }
 
 pub fn pause_handler(ctx: Context<ManagePause>) -> Result<()> {
-    let config = &ctx.accounts.config;
-    let authority = ctx.accounts.authority.key();
-
-    if authority != config.admin && authority != config.pause_authority {
+    if ctx.accounts.role_account.role_type != role_types::PAUSER {
         return err!(StablecoinError::Unauthorized);
     }
 
@@ -40,10 +43,7 @@ pub fn pause_handler(ctx: Context<ManagePause>) -> Result<()> {
 }
 
 pub fn unpause_handler(ctx: Context<ManagePause>) -> Result<()> {
-    let config = &ctx.accounts.config;
-    let authority = ctx.accounts.authority.key();
-
-    if authority != config.admin && authority != config.pause_authority {
+    if ctx.accounts.role_account.role_type != role_types::PAUSER {
         return err!(StablecoinError::Unauthorized);
     }
 

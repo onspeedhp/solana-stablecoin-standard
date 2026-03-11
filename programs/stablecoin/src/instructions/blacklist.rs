@@ -5,6 +5,7 @@ use crate::error::StablecoinError;
 #[derive(Accounts)]
 #[instruction(user: Pubkey)]
 pub struct ManageBlacklist<'info> {
+    #[account(mut)]
     pub authority: Signer<'info>,
 
     #[account(
@@ -22,21 +23,24 @@ pub struct ManageBlacklist<'info> {
     )]
     pub blacklist_account: Account<'info, BlacklistAccount>,
 
+    #[account(
+        seeds = [b"role", role_types::BLACKLISTER.as_bytes(), authority.key().as_ref()],
+        bump = role_account.bump
+    )]
+    pub role_account: Account<'info, RoleAccount>,
+
     pub system_program: Program<'info, System>,
 }
 
-pub fn add_handler(ctx: Context<ManageBlacklist>, user: Pubkey) -> Result<()> {
-    let config = &ctx.accounts.config;
-    let authority = ctx.accounts.authority.key();
-
-    // Only Admin or Blacklister role can manage blacklist
-    // (Assuming a simple check here, could be expanded to use RoleAccount)
-    if authority != config.admin && authority != config.blacklist_authority {
+pub fn add_handler(ctx: Context<ManageBlacklist>, user: Pubkey, reason: String) -> Result<()> {
+    if ctx.accounts.role_account.role_type != role_types::BLACKLISTER {
         return err!(StablecoinError::Unauthorized);
     }
 
     let blacklist = &mut ctx.accounts.blacklist_account;
-    blacklist.user = user;
+    blacklist.wallet = user;
+    blacklist.reason = reason;
+    blacklist.created_at = Clock::get()?.unix_timestamp;
     blacklist.is_blacklisted = true;
     blacklist.bump = ctx.bumps.blacklist_account;
 
@@ -44,17 +48,14 @@ pub fn add_handler(ctx: Context<ManageBlacklist>, user: Pubkey) -> Result<()> {
     Ok(())
 }
 
-pub fn remove_handler(ctx: Context<ManageBlacklist>, user: Pubkey) -> Result<()> {
-    let config = &ctx.accounts.config;
-    let authority = ctx.accounts.authority.key();
-
-    if authority != config.admin && authority != config.blacklist_authority {
+pub fn remove_handler(ctx: Context<ManageBlacklist>, _user: Pubkey) -> Result<()> {
+    if ctx.accounts.role_account.role_type != role_types::BLACKLISTER {
         return err!(StablecoinError::Unauthorized);
     }
 
     let blacklist = &mut ctx.accounts.blacklist_account;
     blacklist.is_blacklisted = false;
 
-    msg!("User {} removed from blacklist", user);
+    msg!("User removed from blacklist");
     Ok(())
 }

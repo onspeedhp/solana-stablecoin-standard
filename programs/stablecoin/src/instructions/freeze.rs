@@ -1,8 +1,8 @@
+use crate::error::StablecoinError;
+use crate::state::*;
 use anchor_lang::prelude::*;
 use anchor_spl::token_2022::{freeze_account, thaw_account, FreezeAccount, ThawAccount, Token2022};
 use anchor_spl::token_interface::{Mint, TokenAccount};
-use crate::state::*;
-use crate::error::StablecoinError;
 
 #[derive(Accounts)]
 pub struct ManageFreeze<'info> {
@@ -15,6 +15,7 @@ pub struct ManageFreeze<'info> {
     pub config: Account<'info, StablecoinConfig>,
 
     #[account(
+        mut,
         address = config.mint
     )]
     pub mint: InterfaceAccount<'info, Mint>,
@@ -22,18 +23,20 @@ pub struct ManageFreeze<'info> {
     #[account(
         mut,
         token::mint = mint,
-        token::program = token_program,
     )]
     pub account: InterfaceAccount<'info, TokenAccount>,
+
+    #[account(
+        seeds = [b"role", role_types::FREEZER.as_bytes(), authority.key().as_ref()],
+        bump = role_account.bump
+    )]
+    pub role_account: Account<'info, RoleAccount>,
 
     pub token_program: Program<'info, Token2022>,
 }
 
 pub fn freeze_handler(ctx: Context<ManageFreeze>) -> Result<()> {
-    let config = &ctx.accounts.config;
-    let authority = ctx.accounts.authority.key();
-
-    if authority != config.admin && authority != config.freeze_authority {
+    if ctx.accounts.role_account.role_type != role_types::FREEZER {
         return err!(StablecoinError::Unauthorized);
     }
 
@@ -50,10 +53,7 @@ pub fn freeze_handler(ctx: Context<ManageFreeze>) -> Result<()> {
 }
 
 pub fn thaw_handler(ctx: Context<ManageFreeze>) -> Result<()> {
-    let config = &ctx.accounts.config;
-    let authority = ctx.accounts.authority.key();
-
-    if authority != config.admin && authority != config.freeze_authority {
+    if ctx.accounts.role_account.role_type != role_types::FREEZER {
         return err!(StablecoinError::Unauthorized);
     }
 

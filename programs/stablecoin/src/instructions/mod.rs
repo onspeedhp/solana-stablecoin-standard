@@ -6,7 +6,6 @@ pub mod freeze;
 pub mod roles;
 pub mod blacklist;
 pub mod seize;
-pub mod transfer_hook;
 
 pub use initialize::*;
 pub use mint::*;
@@ -16,4 +15,3 @@ pub use freeze::*;
 pub use roles::*;
 pub use blacklist::*;
 pub use seize::*;
-pub use transfer_hook::*;
